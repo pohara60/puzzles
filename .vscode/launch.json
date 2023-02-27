@@ -11,6 +11,25 @@
             ]
         },
         {
+            "name": "Usage",
+            "request": "launch",
+            "program": "bin/train_tracks.dart",
+            "type": "dart",
+            "args": [
+                "-h"
+            ]
+        },
+        {
+            "name": "Usage 2",
+            "request": "launch",
+            "program": "bin/train_tracks.dart",
+            "type": "dart",
+            "args": [
+                "-h",
+                "solve"
+            ]
+        },
+        {
             "name": "10x10",
             "request": "launch",
             "program": "bin/train_tracks.dart",

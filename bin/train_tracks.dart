@@ -60,7 +60,7 @@ class SolveCommand extends Command {
   final name = 'solve';
   @override
   final description =
-      'Solve puzzle specified by <grid>, which is a list of N strings (rows) of length N (cells).';
+      'Solve puzzle specified by <grid>, with <solution>.\n\nThe 1st argument <grid> is a list of N strings (rows) of length N (cells).\nThe 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.\n\ne.g. solve "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x.." "5647341451,1318438624"';
 
   @override
   void run() {
