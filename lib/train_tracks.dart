@@ -18,8 +18,8 @@ class Cell {
     _entry = 'X';
   }
 
-  bool get isNotSet => entry != 'X';
-  bool get isSet => entry == 'X';
+  bool get isNotSet => !isSet;
+  bool get isSet => entry != 'x' && entry != '.';
   bool get isRequired => entry == 'x';
 
   Cell(this._row, this._col, this._entry);
@@ -166,7 +166,7 @@ class Grid {
         l.map((r) => List<Cell>.from(r.map((e) => Cell.fromJson(e)))));
     var cell = solution[start!.row][start!.col];
     cell.set();
-    yield* backtrack(solution, cell);
+    yield* backtrack(solution, cell, cell);
     return;
   }
 
@@ -180,16 +180,18 @@ class Grid {
   }
 
   Iterable<String> backtrack(
-      List<List<Cell>> solution, Cell currentCell) sync* {
+      List<List<Cell>> solution, Cell currentCell, Cell priorCell) sync* {
     var nextCells = neighbours(solution, currentCell)
         .where((element) => element.isNotSet)
         .toList();
     for (var nextCell in nextCells) {
       var oldEntry = nextCell.entry;
-      nextCell.set();
+      nextCell.set(); // Placeholder until next cell processed
+      currentCell.entry = getEntry(priorCell.row, priorCell.col,
+          currentCell.row, currentCell.col, nextCell.row, nextCell.col);
       if (cellOK(solution, nextCell.row, nextCell.col)) {
         if (nextCell.row != end!.row || nextCell.col != end!.col) {
-          yield* backtrack(solution, nextCell);
+          yield* backtrack(solution, nextCell, currentCell);
         } else {
           // Complete if no unset grid cells
           if (gridOK(solution) &&
@@ -224,6 +226,35 @@ class Grid {
       if (!cellOK(solution, i, i, true)) return false;
     }
     return true;
+  }
+
+  String getEntry(int r1, int c1, int r2, int c2, int r3, int c3) {
+    if (r1 < r2) {
+      if (c2 == c3) return '║';
+      if (c2 < c3) return '╚';
+      if (c2 > c3) return '╝';
+      assert(false, 'Should not happen!');
+    } else if (r1 > r2) {
+      if (c2 == c3) return '║';
+      if (c2 < c3) return '╔';
+      if (c2 > c3) return '╗';
+      assert(false, 'Should not happen!');
+    } else if (c1 < c2) {
+      if (r2 == r3) return '═';
+      if (r2 < r3) return '╗';
+      if (r2 > r3) return '╝';
+      assert(false, 'Should not happen!');
+    } else if (c1 > c2) {
+      if (r2 == r3) return '═';
+      if (r2 < r3) return '╔';
+      if (r2 > r3) return '╚';
+      assert(false, 'Should not happen!');
+    } else {
+      if (c2 == c3) return '║';
+      if (r2 == r3) return '═';
+      assert(false, 'Should not happen!');
+    }
+    return 'X';
   }
 }
 
