@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Hardcoded",
+            "request": "launch",
+            "program": "bin/train_tracks.dart",
+            "type": "dart",
+            "args": [
+                "solve"
+            ]
+        },
+        {
+            "name": "10x10",
+            "request": "launch",
+            "program": "bin/train_tracks.dart",
+            "type": "dart",
+            "args": [
+                "solve",
+                "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x..",
+                "5647341451,1318438624"
+            ]
+        }
+    ]
+}
