@@ -14,13 +14,18 @@ class Cell {
   }
 
   String get entry => _entry;
-  void set() {
-    _entry = 'X';
+  void set([String entry = 'X']) {
+    _entry = entry;
+  }
+
+  void disallow() {
+    _entry = 'O';
   }
 
   bool get isNotSet => !isSet;
-  bool get isSet => entry != 'x' && entry != '.';
+  bool get isSet => entry != 'x' && entry != '.' && !isDisallowed;
   bool get isRequired => entry == 'x';
+  bool get isDisallowed => entry == 'O';
 
   Cell(this._row, this._col, this._entry);
 
@@ -179,17 +184,19 @@ class Grid {
     return cells;
   }
 
+  var iterations = 0;
   Iterable<String> backtrack(
       List<List<Cell>> solution, Cell currentCell, Cell priorCell) sync* {
     var nextCells = neighbours(solution, currentCell)
-        .where((element) => element.isNotSet)
+        .where((cell) => cell.isNotSet && !cell.isDisallowed)
         .toList();
     for (var nextCell in nextCells) {
       var oldEntry = nextCell.entry;
-      nextCell.set(); // Placeholder until next cell processed
+      setCell(nextCell); // Placeholder until next cell processed
       currentCell.entry = getEntry(priorCell.row, priorCell.col,
           currentCell.row, currentCell.col, nextCell.row, nextCell.col);
       if (cellOK(solution, nextCell.row, nextCell.col)) {
+        iterations++;
         if (nextCell.row != end!.row || nextCell.col != end!.col) {
           yield* backtrack(solution, nextCell, currentCell);
         } else {
@@ -201,24 +208,127 @@ class Grid {
         }
       }
 
-      nextCell.entry = oldEntry;
+      undoSetCell();
     }
     return;
   }
 
+  List<Cell> undoCells = [];
+  List<String> undoEntries = [];
+  List<int> undoIndexes = [];
+  void rememberCell(Cell cell, [bool combine = false]) {
+    if (!combine) {
+      // New undo stack item
+      undoIndexes.add(undoCells.length);
+    }
+    undoCells.add(cell);
+    undoEntries.add(cell.entry);
+  }
+
+  void setCell(Cell cell, [bool combine = false, String entry = 'X']) {
+    rememberCell(cell, combine);
+    cell.set(entry);
+  }
+
+  void disallowCell(Cell cell, [bool combine = false]) {
+    rememberCell(cell, combine);
+    cell.disallow();
+  }
+
+  void undoSetCell() {
+    assert(undoIndexes.isNotEmpty);
+    while (undoCells.length > undoIndexes.last) {
+      var cell = undoCells.removeLast();
+      cell.entry = undoEntries.removeLast();
+    }
+    undoIndexes.removeLast();
+  }
+
   bool cellOK(List<List<Cell>> solution, int row, int col,
       [bool exact = false]) {
-    var rowEntries = solution[row]
-        .where((element) => element.isSet || element.isRequired)
-        .length;
+    var rowCells = solution[row];
+    var rowSetCells = rowCells.where((cell) => cell.isSet || cell.isRequired);
+    var rowEntries = rowSetCells.length;
     if (rowEntries > _rowCount[row]) return false;
     if (exact && rowEntries != _rowCount[row]) return false;
-    var colEntries = solution
-        .where((list) => list[col].isSet || list[col].isRequired)
-        .length;
+
+    var colCells = solution.expand((row) => [row[col]]);
+    var colSetCells = colCells.where((cell) => cell.isSet || cell.isRequired);
+    var colEntries = colSetCells.length;
     if (colEntries > _colCount[col]) return false;
     if (exact && colEntries != _colCount[col]) return false;
+
+    // Optimisation to disallow cells that are known not to be posible
+    // and then preset cells that must then be set
+    // Can reduce number of iterations by half but runs slower
+
+    var rowUpdate = updateRow(solution, row);
+    var colUpdate = updateCol(solution, col);
+    while (rowUpdate || colUpdate) {
+      var rowUpdateOld = rowUpdate;
+      var colUpdateOld = colUpdate;
+      rowUpdate = false;
+      colUpdate = false;
+
+      if (colUpdateOld) {
+        for (var row = 0; row < dimension; row++) {
+          rowUpdate = updateRow(solution, row);
+        }
+      }
+      if (rowUpdateOld) {
+        for (var col = 0; col < dimension; col++) {
+          colUpdate = updateCol(solution, col);
+        }
+      }
+    }
+
     return true;
+  }
+
+  bool updateCol(List<List<Cell>> solution, int col) {
+    var colUpdate = false;
+    var colCells = solution.expand((row) => [row[col]]);
+    var colSetCells = colCells.where((cell) => cell.isSet || cell.isRequired);
+    var colEntries = colSetCells.length;
+    var colUnsetCells = colCells
+        .where((cell) => !(cell.isSet || cell.isRequired || cell.isDisallowed));
+    if (colEntries == _colCount[col]) {
+      for (var cell in colUnsetCells) {
+        disallowCell(cell, true);
+        colUpdate = true;
+      }
+    }
+    var colDisallowed = colCells.where((cell) => cell.isDisallowed).length;
+    if (_colCount[col] + colDisallowed == dimension) {
+      for (var cell in colUnsetCells.where((cell) => !cell.isDisallowed)) {
+        setCell(cell, true, 'x');
+        colUpdate = true;
+      }
+    }
+    return colUpdate;
+  }
+
+  bool updateRow(List<List<Cell>> solution, int row) {
+    var rowUpdate = false;
+    var rowCells = solution[row];
+    var rowSetCells = rowCells.where((cell) => cell.isSet || cell.isRequired);
+    var rowEntries = rowSetCells.length;
+    var rowUnsetCells = rowCells
+        .where((cell) => !(cell.isSet || cell.isRequired || cell.isDisallowed));
+    if (rowEntries == _rowCount[row]) {
+      for (var cell in rowUnsetCells) {
+        disallowCell(cell, true);
+        rowUpdate = true;
+      }
+    }
+    var rowDisallowed = rowCells.where((cell) => cell.isDisallowed).length;
+    if (_rowCount[row] + rowDisallowed == dimension) {
+      for (var cell in rowUnsetCells.where((cell) => !cell.isDisallowed)) {
+        setCell(cell, true, 'x');
+        rowUpdate = true;
+      }
+    }
+    return rowUpdate;
   }
 
   bool gridOK(List<List<Cell>> solution) {
@@ -290,7 +400,7 @@ class TrainTracks {
       print(solution);
       _solutionCount++;
     }
-    print('Solutions: $_solutionCount\n');
+    print('Solutions: $_solutionCount, ${_grid.iterations} iterations\n');
   }
 }
 
