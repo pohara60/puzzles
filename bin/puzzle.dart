@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:train_tracks/train_tracks.dart';
+import 'package:puzzle/futoshiki.dart';
+import 'package:puzzle/train_tracks.dart';
 
 var grid1 = [
   '........',
@@ -33,18 +34,28 @@ var puzzleGrid2 = [
   '........',
   '....x...',
 ];
-var operands2 = [0, 5, 0, 7, 0, 0, 16, 0, 0, 20, 20, 0, 0, 0, 0, 0];
-// var grid2 = [];
-// var operands2 = [];
+
+var futoshiki1 = [
+  '. . . . 2',
+  '    /   ^',
+  '. .<. . .',
+  '      /  ',
+  '. . . .<.',
+  '        /',
+  '3 . . . .',
+  '  /      ',
+  '. . . . .',
+];
 
 const help = 'help';
-const program = 'train_tracks';
+const program = 'puzzle';
 
 void main(List<String> arguments) {
   exitCode = 0; // presume success
 
-  var runner = CommandRunner('train_tracks', 'train_tracks solver.')
-    ..addCommand(SolveCommand());
+  var runner = CommandRunner('puzzle', 'Puzzle solver.')
+    ..addCommand(TrainTracksCommand())
+    ..addCommand(FutoshikiCommand());
   try {
     runner.run(arguments);
   } on UsageException catch (e) {
@@ -55,21 +66,21 @@ void main(List<String> arguments) {
   }
 }
 
-class SolveCommand extends Command {
+class TrainTracksCommand extends Command {
   @override
-  final name = 'solve';
+  final name = 'train_tracks';
   @override
   final description =
-      'Solve puzzle specified by <grid>, with <solution>.\n\nThe 1st argument <grid> is a list of N strings (rows) of length N (cells).\nThe 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.\n\ne.g. solve "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x.." "5647341451,1318438624"';
+      'Solve Train Tracks puzzle specified by <grid>, with <solution>.\n\nThe 1st argument <grid> is a list of N strings (rows) of length N (cells).\nThe 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.\n\ne.g. train_tracks "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x.." "5647341451,1318438624"';
 
   @override
   void run() {
     // Arguments specify grid
-    TrainTracks? railwayTracks;
+    TrainTracks? trainTracks;
     String? error;
     var numArgs = argResults!.rest.length;
     if (numArgs == 0) {
-      railwayTracks = TrainTracks.solution(solutionGrid2, puzzleGrid2);
+      trainTracks = TrainTracks.solution(solutionGrid2, puzzleGrid2);
     } else {
       if (numArgs == 2) {
         var gridString = argResults!.rest[0];
@@ -83,7 +94,7 @@ class SolveCommand extends Command {
           var solutionList = solutionString.split(',');
           if (solutionList.length == dimension) {
             // Solution is a grid
-            railwayTracks = TrainTracks.solution(solutionList, rowList);
+            trainTracks = TrainTracks.solution(solutionList, rowList);
           } else if (solutionList.length == 2 &&
               solutionList[0].length == dimension &&
               solutionList[1].length == dimension) {
@@ -94,7 +105,7 @@ class SolveCommand extends Command {
                 solutionList[1].split('').map((e) => int.tryParse(e)).toList();
             if (rowCount.every((element) => element != null) &&
                 colCount.every((element) => element != null)) {
-              railwayTracks = TrainTracks(
+              trainTracks = TrainTracks(
                   rowList, rowCount.cast<int>(), colCount.cast<int>());
             } else {
               error =
@@ -114,6 +125,42 @@ class SolveCommand extends Command {
         return;
       }
     }
-    railwayTracks!.solve();
+    trainTracks!.solve();
+  }
+}
+
+class FutoshikiCommand extends Command {
+  @override
+  final name = 'futoshiki';
+  @override
+  final description =
+      'Solve Futoshiki puzzle specified by <grid>.\n\nThe argument <grid> is a list of 2N-1 strings (rows) of length 2N-1 (cells).\nThe odd rows have N optional grid entries in range 1 to N, separated by optional < or > signs to specify horizontal comparisons.\nThe even rows have optional ^ or \\ or / signs to specify column comparisons.\n\ne.g. futoshiki ". . . . 2,    /   ^,. .<. . .,      /  ,. . . .<.,        /,3 . . . .,  /      ,. . . . ."';
+
+  @override
+  void run() {
+    // Arguments specify grid
+    Futoshiki? futoshiki;
+    String? error;
+    var numArgs = argResults!.rest.length;
+    if (numArgs == 0) {
+      futoshiki = Futoshiki(futoshiki1);
+      error = futoshiki.error;
+    } else if (numArgs == 1) {
+      var gridString = argResults!.rest[0];
+      var puzzle = gridString.split(',');
+      futoshiki = Futoshiki(puzzle);
+      error = futoshiki.error;
+    } else {
+      error = '$program: Wrong number of arguments';
+    }
+
+    if (error == null) {
+      futoshiki!.solve();
+    } else {
+      print(error);
+      print('${runner!.usage}');
+      exitCode = 1;
+      return;
+    }
   }
 }

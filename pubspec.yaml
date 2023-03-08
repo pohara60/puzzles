@@ -1,4 +1,4 @@
-name: train_tracks
+name: puzzle
 description: A simple command-line application.
 environment:
   sdk: '>=2.19.0 <3.0.0'
@@ -9,3 +9,4 @@ dev_dependencies:
   pedantic: ^1.9.0
 dependencies:
   args: ^2.0.0
+  collection: ^1.17.1

@@ -2,42 +2,71 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Hardcoded",
+            "name": "TrainTracks Hardcoded ",
             "request": "launch",
-            "program": "bin/train_tracks.dart",
+            "program": "bin/puzzle.dart",
             "type": "dart",
             "args": [
-                "solve"
+                "train_tracks"
             ]
         },
         {
             "name": "Usage",
             "request": "launch",
-            "program": "bin/train_tracks.dart",
+            "program": "bin/puzzle.dart",
             "type": "dart",
             "args": [
                 "-h"
             ]
         },
         {
-            "name": "Usage 2",
+            "name": "TrainTracks Usage",
             "request": "launch",
-            "program": "bin/train_tracks.dart",
+            "program": "bin/puzzle.dart",
             "type": "dart",
             "args": [
                 "-h",
-                "solve"
+                "train_tracks"
             ]
         },
         {
-            "name": "10x10",
+            "name": " TrainTracks 10x10",
             "request": "launch",
-            "program": "bin/train_tracks.dart",
+            "program": "bin/puzzle.dart",
             "type": "dart",
             "args": [
-                "solve",
+                "train_tracks",
                 "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x..",
                 "5647341451,1318438624"
+            ]
+        },
+        {
+            "name": "Futoshiki Usage",
+            "request": "launch",
+            "program": "bin/puzzle.dart",
+            "type": "dart",
+            "args": [
+                "-h",
+                "futoshiki"
+            ]
+        },
+        {
+            "name": "Futoshiki Hardcoded ",
+            "request": "launch",
+            "program": "bin/puzzle.dart",
+            "type": "dart",
+            "args": [
+                "futoshiki"
+            ]
+        },
+        {
+            "name": "Futoshiki 1",
+            "request": "launch",
+            "program": "bin/puzzle.dart",
+            "type": "dart",
+            "args": [
+                "futoshiki",
+                ". . . . 2,    /   ^,. .<. . .,      /  ,. . . .<.,        /,3 . . . .,  /      ,. . . . ."
             ]
         }
     ]
