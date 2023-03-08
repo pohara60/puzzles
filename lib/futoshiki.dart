@@ -19,7 +19,7 @@ class Cell {
   }
 
   bool get isNotSet => !isSet;
-  bool get isSet => entry != 0;
+  bool get isSet => entry != null;
 
   Cell(this._row, this._col, this._entry);
 
@@ -124,7 +124,7 @@ class Grid {
               addConstraints(
                   prevCell,
                   cell,
-                  colComparisonStr == '^'
+                  colComparisonStr == '^' || colComparisonStr == '<'
                       ? ConstraintType.LESS
                       : ConstraintType.GREATER);
             }
@@ -147,7 +147,7 @@ class Grid {
           var comparisonStr = row[c];
           if (c % 2 == 0) {
             // Grid entry - column comparison
-            if (!r'^ \/'.contains(comparisonStr)) {
+            if (!r'^< \/>'.contains(comparisonStr)) {
               _error =
                   'Invalid column comparison $comparisonStr at grid[$r,$c], must be space, \\ or /';
               return [];
@@ -251,207 +251,100 @@ class Grid {
 //     return text;
 //   }
 
-//   Iterable<String> solutions() sync* {
-//     var l = json.decode(json.encode(_grid));
-//     var solution = List<List<Cell>>.from(
-//         l.map((r) => List<Cell>.from(r.map((e) => Cell.fromJson(e)))));
-//     var cell = solution[start!.row][start!.col];
-//     cell.set();
-//     yield* backtrack(solution, cell, cell);
-//     return;
-//   }
+  List<Cell> queue = [];
 
-//   Iterable<Cell> neighbours(List<List<Cell>> solution, Cell cell) {
-//     var cells = <Cell>[];
-//     if (cell.row > 0) cells.add(solution[cell.row - 1][cell.col]);
-//     if (cell.row < dimension - 1) cells.add(solution[cell.row + 1][cell.col]);
-//     if (cell.col > 0) cells.add(solution[cell.row][cell.col - 1]);
-//     if (cell.col < dimension - 1) cells.add(solution[cell.row][cell.col + 1]);
-//     return cells;
-//   }
+  Iterable<String> solutions() sync* {
+    // var l = json.decode(json.encode(_grid));
+    // var solution = List<List<Cell>>.from(
+    //     l.map((r) => List<Cell>.from(r.map((e) => Cell.fromJson(e)))));
+    // var cell = solution[start!.row][start!.col];
+    _grid.forEach((row) {
+      row.forEach((cell) {
+        queue.add(cell);
+      });
+    });
+    queue = queue.reversed.toList();
+    var cell = queue.removeLast();
+    yield* backtrack(cell);
+    return;
+  }
 
-//   var iterations = 0;
-//   Iterable<String> backtrack(
-//       List<List<Cell>> solution, Cell currentCell, Cell priorCell) sync* {
-//     var nextCells = neighbours(solution, currentCell)
-//         .where((cell) => cell.isNotSet && !cell.isDisallowed)
-//         .toList();
-//     for (var nextCell in nextCells) {
-//       var oldEntry = nextCell.entry;
-//       setCell(nextCell); // Placeholder until next cell processed
-//       currentCell.entry = getEntry(priorCell.row, priorCell.col,
-//           currentCell.row, currentCell.col, nextCell.row, nextCell.col);
-//       if (cellOK(solution, nextCell.row, nextCell.col)) {
-//         iterations++;
-//         if (nextCell.row != end!.row || nextCell.col != end!.col) {
-//           yield* backtrack(solution, nextCell, currentCell);
-//         } else {
-//           // Complete if no unset grid cells
-//           if (gridOK(solution) &&
-//               !solution.any((row) => row.any((cell) => cell.isRequired))) {
-//             yield solutionString(solution);
-//           }
-//         }
-//       }
+  var iterations = 0;
+  Iterable<String> backtrack(Cell currentCell) sync* {
+    // Try values in currentCell
+    var alreadySet = currentCell.isSet;
+    for (var v = 1; v <= dimension; v++) {
+      if (!alreadySet || v == currentCell.entry) {
+        iterations++;
+        setCell(currentCell, v);
+        if (cellOK(currentCell)) {
+          // Try next cell
+          if (queue.isNotEmpty) {
+            var nextCell = queue.removeLast();
+            yield* backtrack(nextCell);
+            queue.add(nextCell);
+          } else {
+            // Solution
+            yield toString();
+          }
+        }
+        undoSetCell();
+      }
+    }
+    return;
+  }
 
-//       undoSetCell();
-//     }
-//     return;
-//   }
+  List<Cell> undoCells = [];
+  List<int?> undoEntries = [];
+  List<int> undoIndexes = [];
+  void rememberCell(Cell cell, [bool combine = false]) {
+    if (!combine) {
+      // New undo stack item
+      undoIndexes.add(undoCells.length);
+    }
+    undoCells.add(cell);
+    undoEntries.add(cell.entry);
+  }
 
-//   List<Cell> undoCells = [];
-//   List<String> undoEntries = [];
-//   List<int> undoIndexes = [];
-//   void rememberCell(Cell cell, [bool combine = false]) {
-//     if (!combine) {
-//       // New undo stack item
-//       undoIndexes.add(undoCells.length);
-//     }
-//     undoCells.add(cell);
-//     undoEntries.add(cell.entry);
-//   }
+  void setCell(Cell cell, int value, [bool combine = false]) {
+    rememberCell(cell, combine);
+    cell.set(value);
+  }
 
-//   void setCell(Cell cell, [bool combine = false, String entry = 'X']) {
-//     rememberCell(cell, combine);
-//     cell.set(entry);
-//   }
+  void undoSetCell() {
+    assert(undoIndexes.isNotEmpty);
+    while (undoCells.length > undoIndexes.last) {
+      var cell = undoCells.removeLast();
+      cell.entry = undoEntries.removeLast();
+    }
+    undoIndexes.removeLast();
+  }
 
-//   void disallowCell(Cell cell, [bool combine = false]) {
-//     rememberCell(cell, combine);
-//     cell.disallow();
-//   }
+  bool cellOK(Cell cell) {
+    var solution = _grid;
+    var rowCells = solution[cell.row];
+    var colCells = solution.expand((row) => [row[cell.col]]);
 
-//   void undoSetCell() {
-//     assert(undoIndexes.isNotEmpty);
-//     while (undoCells.length > undoIndexes.last) {
-//       var cell = undoCells.removeLast();
-//       cell.entry = undoEntries.removeLast();
-//     }
-//     undoIndexes.removeLast();
-//   }
+    // Check for duplicates in row or column
+    if (rowCells.any((c) => c != cell && c.entry == cell.entry)) return false;
+    if (colCells.any((c) => c != cell && c.entry == cell.entry)) return false;
 
-//   bool cellOK(List<List<Cell>> solution, int row, int col,
-//       [bool exact = false]) {
-//     var rowCells = solution[row];
-//     var rowSetCells = rowCells.where((cell) => cell.isSet || cell.isRequired);
-//     var rowEntries = rowSetCells.length;
-//     if (rowEntries > _rowCount[row]) return false;
-//     if (exact && rowEntries != _rowCount[row]) return false;
+    // Check constraints
+    if (constraints.containsKey(cell)) {
+      for (var constraint in constraints[cell]!) {
+        var otherCell = constraint['cell'] as Cell;
+        if (otherCell.isSet) {
+          var type = constraint['type'] as ConstraintType;
+          if (type == ConstraintType.GREATER && cell.entry! <= otherCell.entry!)
+            return false;
+          if (type == ConstraintType.LESS && cell.entry! >= otherCell.entry!)
+            return false;
+        }
+      }
+    }
 
-//     var colCells = solution.expand((row) => [row[col]]);
-//     var colSetCells = colCells.where((cell) => cell.isSet || cell.isRequired);
-//     var colEntries = colSetCells.length;
-//     if (colEntries > _colCount[col]) return false;
-//     if (exact && colEntries != _colCount[col]) return false;
-
-//     // Optimisation to disallow cells that are known not to be posible
-//     // and then preset cells that must then be set
-//     // Can reduce number of iterations by half but runs slower
-
-//     var rowUpdate = updateRow(solution, row);
-//     var colUpdate = updateCol(solution, col);
-//     while (rowUpdate || colUpdate) {
-//       var rowUpdateOld = rowUpdate;
-//       var colUpdateOld = colUpdate;
-//       rowUpdate = false;
-//       colUpdate = false;
-
-//       if (colUpdateOld) {
-//         for (var row = 0; row < dimension; row++) {
-//           rowUpdate = updateRow(solution, row);
-//         }
-//       }
-//       if (rowUpdateOld) {
-//         for (var col = 0; col < dimension; col++) {
-//           colUpdate = updateCol(solution, col);
-//         }
-//       }
-//     }
-
-//     return true;
-//   }
-
-//   bool updateCol(List<List<Cell>> solution, int col) {
-//     var colUpdate = false;
-//     var colCells = solution.expand((row) => [row[col]]);
-//     var colSetCells = colCells.where((cell) => cell.isSet || cell.isRequired);
-//     var colEntries = colSetCells.length;
-//     var colUnsetCells = colCells
-//         .where((cell) => !(cell.isSet || cell.isRequired || cell.isDisallowed));
-//     if (colEntries == _colCount[col]) {
-//       for (var cell in colUnsetCells) {
-//         disallowCell(cell, true);
-//         colUpdate = true;
-//       }
-//     }
-//     var colDisallowed = colCells.where((cell) => cell.isDisallowed).length;
-//     if (_colCount[col] + colDisallowed == dimension) {
-//       for (var cell in colUnsetCells.where((cell) => !cell.isDisallowed)) {
-//         setCell(cell, true, 'x');
-//         colUpdate = true;
-//       }
-//     }
-//     return colUpdate;
-//   }
-
-//   bool updateRow(List<List<Cell>> solution, int row) {
-//     var rowUpdate = false;
-//     var rowCells = solution[row];
-//     var rowSetCells = rowCells.where((cell) => cell.isSet || cell.isRequired);
-//     var rowEntries = rowSetCells.length;
-//     var rowUnsetCells = rowCells
-//         .where((cell) => !(cell.isSet || cell.isRequired || cell.isDisallowed));
-//     if (rowEntries == _rowCount[row]) {
-//       for (var cell in rowUnsetCells) {
-//         disallowCell(cell, true);
-//         rowUpdate = true;
-//       }
-//     }
-//     var rowDisallowed = rowCells.where((cell) => cell.isDisallowed).length;
-//     if (_rowCount[row] + rowDisallowed == dimension) {
-//       for (var cell in rowUnsetCells.where((cell) => !cell.isDisallowed)) {
-//         setCell(cell, true, 'x');
-//         rowUpdate = true;
-//       }
-//     }
-//     return rowUpdate;
-//   }
-
-//   bool gridOK(List<List<Cell>> solution) {
-//     for (var i = 0; i < dimension; i++) {
-//       if (!cellOK(solution, i, i, true)) return false;
-//     }
-//     return true;
-//   }
-
-//   String getEntry(int r1, int c1, int r2, int c2, int r3, int c3) {
-//     if (r1 < r2) {
-//       if (c2 == c3) return '║';
-//       if (c2 < c3) return '╚';
-//       if (c2 > c3) return '╝';
-//       assert(false, 'Should not happen!');
-//     } else if (r1 > r2) {
-//       if (c2 == c3) return '║';
-//       if (c2 < c3) return '╔';
-//       if (c2 > c3) return '╗';
-//       assert(false, 'Should not happen!');
-//     } else if (c1 < c2) {
-//       if (r2 == r3) return '═';
-//       if (r2 < r3) return '╗';
-//       if (r2 > r3) return '╝';
-//       assert(false, 'Should not happen!');
-//     } else if (c1 > c2) {
-//       if (r2 == r3) return '═';
-//       if (r2 < r3) return '╔';
-//       if (r2 > r3) return '╚';
-//       assert(false, 'Should not happen!');
-//     } else {
-//       if (c2 == c3) return '║';
-//       if (r2 == r3) return '═';
-//       assert(false, 'Should not happen!');
-//     }
-//     return 'X';
-//   }
+    return true;
+  }
 }
 
 class Futoshiki {
@@ -477,11 +370,11 @@ class Futoshiki {
     }
 
     print(this);
-    // for (var solution in _grid.solutions()) {
-    //   print(solution);
-    //   _solutionCount++;
-    // }
-    // print('Solutions: $_solutionCount, ${_grid.iterations} iterations\n');
+    for (var solution in _grid.solutions()) {
+      print(solution);
+      _solutionCount++;
+    }
+    print('Solutions: $_solutionCount, ${_grid.iterations} iterations\n');
   }
 }
 

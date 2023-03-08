@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_single_quotes
+
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
@@ -36,15 +38,27 @@ var puzzleGrid2 = [
 ];
 
 var futoshiki1 = [
-  '. . . . 2',
-  '    /   ^',
-  '. .<. . .',
-  '      /  ',
-  '. . . .<.',
-  '        /',
-  '3 . . . .',
-  '  /      ',
-  '. . . . .',
+  ". . . . 2",
+  "    >   ^",
+  ". .<. . .",
+  "      <  ",
+  ". . . .<.",
+  "        <",
+  "3 . . . .",
+  "  >      ",
+  ". . . . ."
+];
+
+var futoshikiEmpty = [
+  ". . . . .",
+  "         ",
+  ". . . . .",
+  "         ",
+  ". . . . .",
+  "         ",
+  ". . . . .",
+  "         ",
+  ". . . . ."
 ];
 
 const help = 'help';
@@ -134,7 +148,7 @@ class FutoshikiCommand extends Command {
   final name = 'futoshiki';
   @override
   final description =
-      'Solve Futoshiki puzzle specified by <grid>.\n\nThe argument <grid> is a list of 2N-1 strings (rows) of length 2N-1 (cells).\nThe odd rows have N optional grid entries in range 1 to N, separated by optional < or > signs to specify horizontal comparisons.\nThe even rows have optional ^ or \\ or / signs to specify column comparisons.\n\ne.g. futoshiki ". . . . 2,    /   ^,. .<. . .,      /  ,. . . .<.,        /,3 . . . .,  /      ,. . . . ."';
+      'Solve Futoshiki puzzle specified by <grid>.\n\nThe argument <grid> is a list of 2N-1 strings (rows) of length 2N-1 (cells).\nThe odd rows have N optional grid entries in range 1 to N, separated by optional < or > signs to specify horizontal comparisons.\nThe even rows have optional < or > signs to specify column comparisons.\n\ne.g. futoshiki ". . . . 2,    >   ^,. .<. . .,      <  ,. . . .<.,        <,3 . . . .,  >      ,. . . . ."';
 
   @override
   void run() {
@@ -148,6 +162,10 @@ class FutoshikiCommand extends Command {
     } else if (numArgs == 1) {
       var gridString = argResults!.rest[0];
       var puzzle = gridString.split(',');
+      futoshiki = Futoshiki(puzzle);
+      error = futoshiki.error;
+    } else if (numArgs == 9) {
+      var puzzle = argResults!.rest;
       futoshiki = Futoshiki(puzzle);
       error = futoshiki.error;
     } else {

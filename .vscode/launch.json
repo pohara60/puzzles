@@ -60,13 +60,49 @@
             ]
         },
         {
-            "name": "Futoshiki 1",
+            "name": "Futoshiki 1a",
             "request": "launch",
             "program": "bin/puzzle.dart",
             "type": "dart",
             "args": [
                 "futoshiki",
-                ". . . . 2,    /   ^,. .<. . .,      /  ,. . . .<.,        /,3 . . . .,  /      ,. . . . ."
+                ". . . . 2,    >   ^,. .<. . .,      <  ,. . . .<.,        <,3 . . . .,  >      ,. . . . ."
+            ]
+        },
+        {
+            "name": "Futoshiki 1b",
+            "request": "launch",
+            "program": "bin/puzzle.dart",
+            "type": "dart",
+            "args": [
+                "futoshiki",
+                ". . . . 2",
+                "    >   ^",
+                ". .<. . .",
+                "      <  ",
+                ". . . .<.",
+                "        <",
+                "3 . . . .",
+                "  >      ",
+                ". . . . ."
+            ]
+        },
+        {
+            "name": "Futoshiki 2",
+            "request": "launch",
+            "program": "bin/puzzle.dart",
+            "type": "dart",
+            "args": [
+                "futoshiki",
+                ". . . 2<.",
+                "  < >    ",
+                ". . . .<.",
+                "    <    ",
+                ". . . . 3",
+                "      >  ",
+                ". . . . .",
+                ">       <",
+                ".>.<. . ."
             ]
         }
     ]
