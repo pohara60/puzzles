@@ -191,7 +191,6 @@ class Grid {
         .where((cell) => cell.isNotSet && !cell.isDisallowed)
         .toList();
     for (var nextCell in nextCells) {
-      var oldEntry = nextCell.entry;
       setCell(nextCell); // Placeholder until next cell processed
       currentCell.entry = getEntry(priorCell.row, priorCell.col,
           currentCell.row, currentCell.col, nextCell.row, nextCell.col);

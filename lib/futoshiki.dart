@@ -1,6 +1,100 @@
 import 'package:collection/collection.dart';
 
-bool debug_print = !true;
+bool debug_print = true;
+
+class Possible {
+  static late int dimension;
+  late final List<bool> _possible;
+  late final int _base;
+  Possible([bool initial = true, this._base = 1])
+      : _possible = List<bool>.filled(dimension, initial);
+  Possible.value(int value, [this._base = 1])
+      : _possible = List.generate(
+            dimension, (index) => index == value - _base ? true : false);
+
+  bool operator [](int value) => _possible[value - _base];
+  void operator []=(int value, bool possible) =>
+      _possible[value - _base] = possible;
+  int get count => _possible.where((element) => element == true).length;
+
+  @override
+  String toString() {
+    return List.generate(
+      dimension,
+      (i) => _possible[i] ? (i + _base).toString() : '',
+    ).join('');
+  }
+
+  bool clear(int value) {
+    if (_possible[value - _base]) {
+      _possible[value - _base] = false;
+      return true;
+    }
+    return false;
+  }
+
+  bool remove(Possible other) {
+    var update = false;
+    assert(_base == other._base);
+    for (var value = _base; value < _base + dimension; value++) {
+      if (other[value]) {
+        if (clear(value)) {
+          update = true;
+        }
+      }
+    }
+    return update;
+  }
+
+  int get min {
+    for (var value = 0; value < dimension; value++) {
+      if (_possible[value]) return value + _base;
+    }
+    return _base + dimension;
+  }
+
+  int get max {
+    for (var value = dimension - 1; value >= 0; value--) {
+      if (_possible[value]) return value + _base;
+    }
+    return _base - 1;
+  }
+
+  set min(int min) {
+    for (var value = _base; value < min; value++) {
+      clear(value);
+    }
+  }
+
+  set max(int max) {
+    for (var value = _base + dimension - 1; value > max; value--) {
+      clear(value);
+    }
+  }
+
+  int unique() {
+    if (count == 1) {
+      return _possible.indexOf(true) + _base;
+    }
+    return 0;
+  }
+
+  Possible subtract(Possible other) {
+    assert(_base == other._base);
+    var result = Possible.from(this);
+    for (var value = 0; value < dimension; value++) {
+      if (other._possible[value]) {
+        result._possible[value] = false;
+      }
+    }
+    return result;
+  }
+
+  Possible.from(Possible other) {
+    _possible = List.from(other._possible);
+    _base = other._base;
+  }
+}
 
 class Cell {
   final int _row;
@@ -9,8 +103,12 @@ class Cell {
   int get col => _col;
 
   int? _entry;
+
   set entry(entry) {
     _entry = entry;
+    if (_entry != null) {
+      _possible = Possible.value(_entry!);
+    }
   }
 
   int? get entry => _entry;
@@ -21,11 +119,44 @@ class Cell {
   bool get isNotSet => !isSet;
   bool get isSet => entry != null;
 
-  Cell(this._row, this._col, this._entry);
+  late Possible _possible;
+  Possible get possible => _possible;
+  int get min => _entry != null ? _entry! : _possible.min;
+  int get max => _entry != null ? _entry! : _possible.max;
+  set min(int min) {
+    if (_entry != null) {
+      if (min > _entry!) {
+        throw Exception('Cannot set min $min in $this');
+      }
+      return;
+    }
+    _possible.min = min;
+  }
+
+  set max(int max) {
+    if (_entry != null) {
+      if (max < _entry!) {
+        throw Exception('Cannot set max $max in $this');
+      }
+      return;
+    }
+    _possible.max = max;
+  }
+
+  Cell(this._row, this._col, this._entry) {
+    if (entry != null) {
+      _possible = Possible.value(entry!);
+    } else {
+      _possible = Possible();
+    }
+  }
 
   @override
   String toString() {
-    return 'R${_row}C$_col=$_entry';
+    if (_entry != null) {
+      return 'R${_row}C$_col=$_entry';
+    }
+    return 'R${_row}C$_col=$_possible';
   }
 
   Cell.fromJson(Map<String, dynamic> json)
@@ -48,6 +179,29 @@ class Cell {
     }
     return 1;
   }
+
+  bool removePossible(Possible set) {
+    if (_entry != null && set[_entry!]) {
+      throw Exception('Cannot remove set entry from $this');
+    }
+    return _possible.remove(set);
+  }
+
+  bool checkUnique() {
+    if (_entry != null) return false;
+    var unique = _possible.unique();
+    if (unique > 0) {
+      entry = unique;
+      return true;
+    }
+    return false;
+  }
+
+  int getAxis(String axis) {
+    if (axis == 'R') return _row;
+    if (axis == 'C') return _col;
+    throw Exception('etAxis called with axis $axis');
+  }
 }
 
 enum ConstraintType {
@@ -58,18 +212,21 @@ enum ConstraintType {
   String toString() => this == LESS ? '<' : '>';
 }
 
+typedef Cells = List<Cell>;
+
 class Grid {
   List<List<Cell>> _grid = [];
   late int dimension;
-  Map<Cell, List<Map<String, dynamic>>> constraints = {};
-
-  late List<List<Cell>> _solution = [];
+  Map<Object, List<Map<String, dynamic>>> constraints = {};
 
   String? _error;
   String? get error => _error;
 
-  Grid(List<String> puzzle) {
+  final List<String> puzzle;
+
+  Grid(this.puzzle) {
     dimension = (puzzle.length + 1) ~/ 2;
+    Possible.dimension = dimension;
     _grid = getPuzzle(puzzle);
   }
 
@@ -177,6 +334,64 @@ class Grid {
       }
     }
     return text;
+  }
+
+  String toPossibleString() {
+    const rowBoxTopStart = '╔═══';
+    const rowBoxTopMiddle = '╤═══';
+    const rowBoxTopEnd = '╗\n';
+    const rowBoxSeparatorStart = '╠═══';
+    const rowBoxSeparatorMiddle = '╪═══';
+    const rowBoxSeparatorEnd = '╣\n';
+    const rowSeparatorStart = '╟───';
+    const rowSeparatorMiddle = '┼───';
+    const rowSeparatorEnd = '╢\n';
+    const rowBoxBottomStart = '╚═══';
+    const rowBoxBottomMiddle = '╧═══';
+    const rowBoxBottomEnd = '╝';
+    const colBoxSeparator = '║';
+    const colSeparator = '│';
+    var rowBoxTop =
+        rowBoxTopStart + rowBoxTopMiddle * (dimension - 1) + rowBoxTopEnd;
+    var rowBoxSeparator = rowBoxSeparatorStart +
+        rowBoxSeparatorMiddle * (dimension - 1) +
+        rowBoxSeparatorEnd;
+    var rowSeparator = rowSeparatorStart +
+        rowSeparatorMiddle * (dimension - 1) +
+        rowSeparatorEnd;
+    var rowBoxBottom = rowBoxBottomStart +
+        rowBoxBottomMiddle * (dimension - 1) +
+        rowBoxBottomEnd;
+    var result = StringBuffer();
+    for (var r = 0; r < dimension; r++) {
+      if (r == 0) result.write(rowBoxTop);
+      for (var t = 0; t < 3; t++) {
+        for (var c = 0; c < dimension; c++) {
+          if (c == 0) result.write(colBoxSeparator);
+          for (var p = t * 3; p < t * 3 + 3; p++) {
+            if (p < dimension && _grid[r][c].possible[p + 1]) {
+              result.write(((p + 1).toString()));
+            } else {
+              result.write(' ');
+            }
+          }
+          if (c % 3 == 2) {
+            result.write(colBoxSeparator);
+          } else {
+            result.write(colSeparator);
+          }
+        }
+        result.write('\n');
+      }
+      if (r == dimension - 1) {
+        result.write(rowBoxBottom);
+      } else if (r % 3 == 2) {
+        result.write(rowBoxSeparator);
+      } else {
+        result.write(rowSeparator);
+      }
+    }
+    return result.toString();
   }
 
   String rowString(int r) {
@@ -335,16 +550,219 @@ class Grid {
         var otherCell = constraint['cell'] as Cell;
         if (otherCell.isSet) {
           var type = constraint['type'] as ConstraintType;
-          if (type == ConstraintType.GREATER && cell.entry! <= otherCell.entry!)
+          if (type == ConstraintType.GREATER &&
+              cell.entry! <= otherCell.entry!) {
             return false;
-          if (type == ConstraintType.LESS && cell.entry! >= otherCell.entry!)
+          }
+          if (type == ConstraintType.LESS && cell.entry! >= otherCell.entry!) {
             return false;
+          }
         }
       }
     }
 
     return true;
   }
+
+  String? logicSolve() {
+    var update = true;
+    while (update) {
+      // Try different logic steps
+      update = false;
+      if (!update) update = updatePossible();
+      if (!update) update = updateConstraints();
+      if (!update) update = findSingle();
+      if (!update) update = nakedGroup();
+    }
+    // return toPossibleString() + '\n' + toString();
+    return toString();
+  }
+
+  bool updatePossible() {
+    var update = false;
+    for (var axis in ['R', 'C']) {
+      for (var index = 0; index < dimension; index++) {
+        var cells = getAxis(axis, index);
+        var set = Possible(false);
+        for (var cell in cells) {
+          if (cell.entry != null) {
+            set[cell.entry!] = true;
+          }
+        }
+        if (set.count > 0) {
+          for (var cell in cells) {
+            if (cell.entry == null) {
+              if (cell.removePossible(set)) {
+                update = true;
+                printDebug('updatePossible: $cell');
+              }
+            }
+          }
+        }
+      }
+    }
+    return update;
+  }
+
+  bool updateConstraints() {
+    var update = false;
+    for (var entry in constraints.entries) {
+      var cell = entry.key as Cell;
+      for (var constraint in entry.value) {
+        var otherCell = constraint['cell'] as Cell;
+        var type = constraint['type'] as ConstraintType;
+        if (type == ConstraintType.GREATER && cell.min <= otherCell.min) {
+          cell.min = otherCell.min + 1;
+          update = true;
+          printDebug('updateConstraints: set min for $cell');
+        }
+        if (type == ConstraintType.LESS && cell.max >= otherCell.max) {
+          cell.max = otherCell.max - 1;
+          update = true;
+          printDebug('updateConstraints: set max for $cell');
+        }
+      }
+    }
+    return update;
+  }
+
+  bool findSingle() {
+    var updated = false;
+    _grid.forEach((row) => row.forEach((cell) {
+          if (!cell.isSet) {
+            if (cell.checkUnique()) {
+              updated = true;
+              cellUpdated(cell, 'Naked Single', '$cell');
+            } else {
+              // Check for a possible value not in row or column
+              for (var axis in ['R', 'C']) {
+                var cells = getAxis(axis, cell.getAxis(axis)).toList();
+                if (cells.isNotEmpty) {
+                  cells.remove(cell);
+                  var otherPossible = unionCellsPossible(cells);
+                  var difference = cell.possible.subtract(otherPossible);
+                  var value = difference.unique();
+                  if (value > 0) {
+                    cell.entry = value;
+                    updated = true;
+                    cellUpdated(cell, 'Hidden Single', '$cell');
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }));
+    return updated;
+  }
+
+  bool nakedGroup() {
+    var update = false;
+    for (var axis in ['R', 'C']) {
+      for (var index = 0; index < dimension; index++) {
+        var cells = getAxis(axis, index);
+        if (nonetNakedGroup(cells)) {
+          update = true;
+        }
+      }
+    }
+    return update;
+  }
+
+  bool nonetNakedGroup(Iterable<Cell> cells) {
+    var anyUpdate = false;
+    // Check cells for groups
+    // Ignore known cells
+    var possibleCells = cells.where((cell) => !cell.isSet).toList();
+    var groupMax = (possibleCells.length + 1) ~/ 2;
+    //var groupMax = possibleCells.length - 1;
+    var groupMin = 2;
+    if (groupMax < groupMin) return false;
+
+    // Check for groups of groupMin to groupMax cells
+    var updated = true;
+    while (updated) {
+      updated = false;
+      for (var gl = groupMin; gl <= groupMax; gl++) {
+        var groups = findGroups(possibleCells, gl, [], 0);
+        for (var group in groups) {
+          var possible = unionCellsPossible(group);
+          // Remove group from other cells
+          for (var i = 0; i < possibleCells.length; i++) {
+            var c = possibleCells[i];
+            if (!group.contains(c)) {
+              if (c.removePossible(possible)) {
+                updated = true;
+                anyUpdate = true;
+                cellUpdated(c, 'Naked Group', 'remove group $possible from $c');
+              }
+            }
+          }
+        }
+      }
+    }
+    return anyUpdate;
+  }
+
+  /// Recursive function to compute Groups (Pairs, Triples, etc) of possible values
+  /// pC - list of cells to check
+  /// g - required group size
+  /// sC - current cells in group
+  /// f - next index in check cells to try
+  /// Returns list of groups, each of which is a list of cells
+////
+  List<Cells> findGroups(Cells pC, int g, Cells sC, int f) {
+    var groups = <Cells>[];
+    for (var index = f; index < pC.length; index++) {
+      var c = pC[index];
+      if (!sC.contains(c) && c.possible.count <= g) {
+        var newSC = [...sC, c];
+        var possible = unionCellsPossible(newSC);
+        if (possible.count <= g) {
+          if (newSC.length == g) {
+            groups.add(newSC);
+          } else {
+            // try adding cells to group
+            var newGroups = findGroups(pC, g, newSC, index + 1);
+            if (newGroups.isNotEmpty) {
+              groups.addAll(newGroups);
+            }
+          }
+        }
+      }
+    }
+    return groups;
+  }
+
+  Iterable<Cell> getAxis(String axis, int index) {
+    if (axis == 'R') {
+      return _grid[index];
+    }
+    if (axis == 'C') {
+      return _grid.expand((row) => [row[index]]);
+    }
+    return [];
+  }
+
+  void cellUpdated(Cell cell, String s, String t) {
+    printDebug('$s: $t');
+  }
+}
+
+Possible unionCellsPossible(List<Cell> cells) {
+  var possibles = cells.map((cell) => cell.possible).toList();
+  return unionPossible(possibles);
+}
+
+Possible unionPossible(List<Possible> possibles, [base = 1]) {
+  var result = Possible(false, base);
+  for (var value = 0; value < Possible.dimension; value++) {
+    result._possible[value] = possibles.fold(
+        false,
+        (previousValue, possible) =>
+            possible._possible[value] ? true : previousValue);
+  }
+  return result;
 }
 
 class Futoshiki {
@@ -370,6 +788,12 @@ class Futoshiki {
     }
 
     print(this);
+    var copy = Grid(_grid.puzzle);
+    var logicSolution = copy.logicSolve();
+    if (logicSolution != null) {
+      print('Logic Solution\n$logicSolution');
+    }
+    print('Backtrack Solution(s)');
     for (var solution in _grid.solutions()) {
       print(solution);
       _solutionCount++;
