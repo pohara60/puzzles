@@ -340,9 +340,6 @@ class Grid {
     const rowBoxTopStart = '╔═══';
     const rowBoxTopMiddle = '╤═══';
     const rowBoxTopEnd = '╗\n';
-    const rowBoxSeparatorStart = '╠═══';
-    const rowBoxSeparatorMiddle = '╪═══';
-    const rowBoxSeparatorEnd = '╣\n';
     const rowSeparatorStart = '╟───';
     const rowSeparatorMiddle = '┼───';
     const rowSeparatorEnd = '╢\n';
@@ -353,20 +350,19 @@ class Grid {
     const colSeparator = '│';
     var rowBoxTop =
         rowBoxTopStart + rowBoxTopMiddle * (dimension - 1) + rowBoxTopEnd;
-    var rowBoxSeparator = rowBoxSeparatorStart +
-        rowBoxSeparatorMiddle * (dimension - 1) +
-        rowBoxSeparatorEnd;
-    var rowSeparator = rowSeparatorStart +
-        rowSeparatorMiddle * (dimension - 1) +
-        rowSeparatorEnd;
     var rowBoxBottom = rowBoxBottomStart +
         rowBoxBottomMiddle * (dimension - 1) +
         rowBoxBottomEnd;
     var result = StringBuffer();
+    var tRows = 1 + (dimension - 1) ~/ 3;
     for (var r = 0; r < dimension; r++) {
+      var row = _grid[r];
+      var rowSeparator = '';
       if (r == 0) result.write(rowBoxTop);
-      for (var t = 0; t < 3; t++) {
+      for (var t = 0; t < tRows; t++) {
+        rowSeparator = rowSeparatorStart[0];
         for (var c = 0; c < dimension; c++) {
+          var cell = row[c];
           if (c == 0) result.write(colBoxSeparator);
           for (var p = t * 3; p < t * 3 + 3; p++) {
             if (p < dimension && _grid[r][c].possible[p + 1]) {
@@ -375,18 +371,30 @@ class Grid {
               result.write(' ');
             }
           }
-          if (c % 3 == 2) {
+          // column constraint
+          if (r < dimension - 1) {
+            var nextCell = _grid[r + 1][c];
+            var constraint = getConstraint(cell, nextCell);
+            rowSeparator +=
+                (constraint?.toString() ?? rowSeparatorMiddle[1]) * 3;
+            if (c < dimension - 1) {
+              rowSeparator += rowSeparatorMiddle[0];
+            }
+          }
+          if (c == dimension - 1) {
             result.write(colBoxSeparator);
+            rowSeparator += rowSeparatorEnd;
           } else {
-            result.write(colSeparator);
+            // row constraint
+            var nextCell = row[c + 1];
+            var constraint = getConstraint(cell, nextCell);
+            result.write(constraint?.toString() ?? colSeparator);
           }
         }
         result.write('\n');
       }
       if (r == dimension - 1) {
         result.write(rowBoxBottom);
-      } else if (r % 3 == 2) {
-        result.write(rowBoxSeparator);
       } else {
         result.write(rowSeparator);
       }
@@ -574,7 +582,7 @@ class Grid {
       if (!update) update = findSingle();
       if (!update) update = nakedGroup();
     }
-    // return toPossibleString() + '\n' + toString();
+    printDebug(toPossibleString() + '\n');
     return toString();
   }
 
