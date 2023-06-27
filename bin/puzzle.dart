@@ -36,6 +36,38 @@ var puzzleGrid2 = [
   '........',
   '....x...',
 ];
+var solutionGrid3 = [
+  '....╔╗..',
+  '....║║..',
+  '╗..╔╝║..',
+  '║.╔╝.╚═╗',
+  '╚═╝....║',
+  '.....╔╗║',
+  '....╔╝╚╝',
+  '....║...',
+];
+var puzzleGrid3 = [
+  '........',
+  '........',
+  '╗..╔╝║..',
+  '...╝....',
+  '........',
+  '........',
+  '........',
+  '....║...',
+];
+var puzzleGrid4 = [
+  '....╔...',
+  '........',
+  '........',
+  '....╝...',
+  '........',
+  '........',
+  '═.......',
+  '.....║..',
+];
+var rowCount4 = [3, 4, 5, 4, 4, 3, 3, 1];
+var colCount4 = [1, 3, 3, 2, 4, 6, 4, 4];
 
 var futoshiki1 = [
   ". . . . 2",
@@ -85,7 +117,7 @@ class TrainTracksCommand extends Command {
   final name = 'train_tracks';
   @override
   final description =
-      'Solve Train Tracks puzzle specified by <grid>, with <solution>.\n\nThe 1st argument <grid> is a list of N strings (rows) of length N (cells).\nThe 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.\n\ne.g. train_tracks "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x.." "5647341451,1318438624"';
+      'Solve Train Tracks puzzle specified by <grid>, with <solution>.\n\nThe 1st argument <grid> is a list of N strings (rows) of length N (cells).\nThe 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.\n\nThe cells may be specified using the track characters "║═╚╔╗╝" or simply "x", with "." for unspecified, e.g.\n\ntrain_tracks "........,........,╗..╔╝║..,...╝....,........,........,........,....║..." "34544331,13324644"\nor\ntrain_tracks "........,........,x..xxx..,...x....,........,........,........,....x..." "34544331,13324644"';
 
   @override
   void run() {
@@ -94,7 +126,8 @@ class TrainTracksCommand extends Command {
     String? error;
     var numArgs = argResults!.rest.length;
     if (numArgs == 0) {
-      trainTracks = TrainTracks.solution(solutionGrid2, puzzleGrid2);
+      trainTracks = TrainTracks.solution(solutionGrid3, puzzleGrid3);
+      // trainTracks = TrainTracks(puzzleGrid4, rowCount4, colCount4);
     } else {
       if (numArgs == 2) {
         var gridString = argResults!.rest[0];

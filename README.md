@@ -8,29 +8,44 @@ dart run bin\puzzle.dart
 
 ## Train Tracks
 
+The Train Tracks solver uses two ways to solve the puzzle:
+1.  Logic - repeatedly applies logic identifying cells that have a track, finally determining the track that joins these cells.
+2.  Backtracking - iteratively try all possible tracks.
+
 Run example puzzle:
 ```
 dart run bin\puzzle.dart train_tracks
  31225634
 2........
 2........
-4S..xxx..
-6...x....
+4╗..╔╝║..
+6...╝....
 4........
 3........
 4........
-1....E...
+1....║...
 
+Logic Solution
  OOOO╔╗OO
  OOOO║║OO
- ║OO╔╝║OO
+ ╗OO╔╝║OO
  ║O╔╝O╚═╗
  ╚═╝OOOO║
  OOOOO╔╗║
  OOOO╔╝╚╝
- OOOOXOOO
+ OOOO║OOO
 
-Solutions: 1, 2316 iterations
+Backtrack Solution(s)
+ OOOO╔╗OO
+ OOOO║║OO
+ ╗OO╔╝║OO
+ ║O╔╝O╚═╗
+ ╚═╝OOOO║
+ OOOOO╔╗║
+ OOOO╔╝╚╝
+ OOOO║OOO
+
+Solutions: 1, 524 iterations
 ```
 
 Get help:
@@ -41,7 +56,11 @@ Solve Train Tracks puzzle specified by <grid>, with <solution>.
 The 1st argument <grid> is a list of N strings (rows) of length N (cells).
 The 2nd argument specifies the <solution>, either as another full grid, or a list with rowCounts and colCounts.
 
-e.g. train_tracks "..........,..........,.......x..,x.........,..........,...x......,..........,..........,..........,.......x.." "5647341451,1318438624"
+The cells may be specified using the track characters "║═╚╔╗╝" or simply "x", with "." for unspecified, e.g.
+
+train_tracks "........,........,╗..╔╝║..,...╝....,........,........,........,....║..." "34544331,13324644"
+or
+train_tracks "........,........,x..xxx..,...x....,........,........,........,....x..." "34544331,13324644"
 
 Usage: puzzle train_tracks [arguments]
 -h, --help    Print this usage information.
@@ -49,53 +68,10 @@ Usage: puzzle train_tracks [arguments]
 Run "puzzle help" to see global options.
 ```
 
-Running the help puzzle gives:
-```
- 1318438624
-5..........
-6..........
-4.......x..
-7S.........
-3..........
-4...x......
-1..........
-4..........
-5..........
-1.......E..
-
- OOO╔╗OO╔═╗
- OOO║╚═╗║O║
- OOO║OO╚╝O║
- ═╗O║OO╔══╝
- O║O║OO║OOO
- O╚═╝OO║OOO
- OOOOOO║OOO
- OOO╔══╝OOO
- OOO╚═══╗OO
- OOOOOOOXOO
-
- OOO╔╗OO╔═╗
- OOO║╚══╝O║
- OOO║OO╔╗O║
- ═╗O║OO║╚═╝
- O║O║OO║OOO
- O╚═╝OO║OOO
- OOOOOO║OOO
- OOO╔══╝OOO
- OOO╚═══╗OO
- OOOOOOOXOO
-
-Solutions: 2, 269138 iterations
-```
-
-### To Do
-
-Logic solver
-
 ## Futoshiki
 
 The Futoshiki solver uses two ways to solve the puzzle:
-1.  Logic - repeatedly applies logic regaiding possible numbers in a cell, identifying cells that have only one possible value.
+1.  Logic - repeatedly applies logic regarding possible numbers in a cell, identifying cells that have only one possible value.
 2.  Backtracking - iteratively try all possible legal combonations of numbers.
 
 Run example puzzle:
@@ -199,6 +175,23 @@ updatePossible: R2C0=2
 Naked Single: R2C0=2
 Hidden Single: R2C2=1
 Naked Single: R3C2=2
+╔═══╤═══╤═══╤═══╤═══╗
+║1  │  3│   │   │ 2 ║
+║   │   │ 5 │4  │   ║
+╟───┼───┼>>>┼───┼<<<╢
+║   │1  <   │ 2 │  3║
+║ 5 │   <4  │   │   ║
+╟───┼───┼───┼<<<┼───╢
+║ 2 │   │1  │  3<   ║
+║   │ 5 │   │   <4  ║
+╟───┼───┼───┼───┼<<<╢
+║  3│   │ 2 │1  │   ║
+║   │4  │   │   │ 5 ║
+╟───┼>>>┼───┼───┼───╢
+║   │ 2 │  3│   │1  ║
+║4  │   │   │ 5 │   ║
+╚═══╧═══╧═══╧═══╧═══╝
+
 Logic Solution
 1 3 5 4 2
     >   <
