@@ -234,7 +234,56 @@ Usage: puzzle futoshiki [arguments]
 Run "puzzle help" to see global options.
 ```
 
+## Tetonor
+
+The Tetonor solver determines all factors of the cell values that are allowed by the operands, including unspecified (wildcard) operands. It then iterates over possible solutions.
+
+Run example puzzle:
+```
+dart run bin\puzzle.dart tetonor 
+Cells:
+36 [(3,12), (4,9)]
+42 [(6,7)]
+27 []
+180 [(6,30), (12,15)]
+140 [(2,70), (5,28), (7,20)]
+33 []
+245 [(5,49), (7,35)]
+30 [(3,10)]
+13 []
+224 [(8,28), (14,16)]
+27 []
+54 [(6,9)]
+272 [(4,68), (8,34), (16,17)]
+15 []
+72 [(3,24)]
+36 [(3,12), (4,9)]
+Operands: 3, (3,6), 6, 6, 7, 7, 9, (9,14), 14, (14,16), 16, (16,24), (16,24), 24, (24,99), (24,99)
+
+Cells:
+36 = 4 * 9, 42 = 7 + 35, 27 = 7 + 20, 180 = 6 * 30, 140 = 7 * 20, 33 = 16 + 17, 245 = 7 * 35, 30 = 14 + 16, 13 = 4 + 9, 224 = 14 * 16, 27 = 3 + 24, 54 = 6 * 9, 272 = 16 * 17, 15 = 6 + 9, 72 = 3 * 24, 36 = 6 + 30
+Operands: 3, 4, 6, 6, 7, 7, 9, 9, 14, 16, 16, 17, 20, 24, 30, 35
+
+Cells:
+36 = 6 + 30, 42 = 7 + 35, 27 = 7 + 20, 180 = 6 * 30, 140 = 7 * 20, 33 = 16 + 17, 245 = 7 * 35, 30 = 14 + 16, 13 = 4 + 9, 224 = 14 * 16, 27 = 3 + 24, 54 = 6 * 9, 272 = 16 * 17, 15 = 6 + 9, 72 = 3 * 24, 36 = 4 * 9
+Operands: 3, 4, 6, 6, 7, 7, 9, 9, 14, 16, 16, 17, 20, 24, 30, 35
+
+Solution Products: 2, Solutions: 2
+```
+
+Get help:
+```
+dart run bin\puzzle.dart -h tetonor
+Solve Tetonor puzzle specified by <cells> and <operands>, which are strings with a list of 16 numbers. Operands may include 0 for unknown values. For example:
+
+tetonor "28,92,30,180,126,24,170,29,24,140,25,95,144,27,224,39" "1,2,0,5,7,0,12,12,14,16,0,18,19,0,0,0"
+
+The output shows the Cells with their possible factors, the Operands with their possible values, and then the solutions.
+
+Usage: puzzle tetonor [arguments]
+-h, --help    Print this usage information.
+
+Run "puzzle help" to see global options.
 ## To Do
 
-Merge Tetonor repository.
 Consider Codewords, KenKen, Kakuro.
