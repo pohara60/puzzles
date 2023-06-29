@@ -128,6 +128,108 @@ class Solution {
     return 'Cells:\n$cells\nOperands: $operands';
   }
 
+  String toPrettyString() {
+    var copiedCells = List<SolvedCell>.from(_cells);
+    copiedCells.sort((a, b) => a._cellIndex.compareTo(b._cellIndex));
+    var copiedOperands = List<SolvedOperand>.from(_operands);
+    // The operand index order may not correspond to value order because of wildcards
+    // so we ignore the index order
+    copiedOperands.sort((a, b) => a._value.compareTo(b._value));
+
+    // Each cell can be:
+    // +-----+
+    // | 999 |
+    // +-----+
+    // |99*99|
+    // +-----+
+    // The puzzle has 12 cells in 4 rows of 3
+    const ROWS = 3;
+    const COLS = 4;
+    const OPS = 12;
+    const rowBoxTopStart = '╔═════';
+    const rowBoxTopMiddle = '╤═════';
+    const rowBoxTopEnd = '╗\n';
+    const rowSeparatorStart = '╟─────';
+    const rowSeparatorMiddle = '┼─────';
+    const rowSeparatorEnd = '╢\n';
+    const rowBoxBottomStart = '╚═════';
+    const rowBoxBottomMiddle = '╧═════';
+    const rowBoxBottomEnd = '╝';
+    const colBoxSeparator = '║';
+    const colSeparator = '│';
+    var rowBoxTop =
+        rowBoxTopStart + rowBoxTopMiddle * (COLS - 1) + rowBoxTopEnd;
+    var rowBoxBottom =
+        rowBoxBottomStart + rowBoxBottomMiddle * (COLS - 1) + rowBoxBottomEnd;
+    var operandTop = rowBoxTopStart.substring(0, 3) +
+        rowBoxTopMiddle.substring(0, 3) * (OPS - 1) +
+        rowBoxTopEnd;
+    var operandBottom = rowBoxBottomStart.substring(0, 3) +
+        rowBoxBottomMiddle.substring(0, 3) * (OPS - 1) +
+        rowBoxBottomEnd;
+    var result = StringBuffer();
+    var index = 0;
+    for (var r = 0; r < ROWS; r++) {
+      var rowSeparator = rowSeparatorStart;
+      if (r == 0) result.write(rowBoxTop);
+      for (var c = 0; c < COLS; c++) {
+        var cell = copiedCells[index++];
+        // Value
+        if (c == 0) result.write(colBoxSeparator);
+        result.write((cell.value.toString().padLeft(4)));
+        result.write(' ');
+        if (c == COLS - 1) {
+          result.write(colBoxSeparator);
+          result.write('\n');
+          rowSeparator += rowSeparatorEnd;
+        } else {
+          result.write(colSeparator);
+          rowSeparator += rowSeparatorMiddle;
+        }
+      }
+      // result.write(rowSeparator);
+      rowSeparator = rowSeparatorStart;
+      index -= COLS;
+      for (var c = 0; c < COLS; c++) {
+        var cell = copiedCells[index++];
+        // Operands
+        if (c == 0) result.write(colBoxSeparator);
+        result.write((cell.operand1.value.toString().padLeft(2)));
+        result.write(cell.isProduct ? '*' : '+');
+        result.write((cell.operand2.value.toString().padRight(2)));
+        if (c == COLS - 1) {
+          result.write(colBoxSeparator);
+          result.write('\n');
+          rowSeparator += rowSeparatorEnd;
+        } else {
+          result.write(colSeparator);
+          rowSeparator += rowSeparatorMiddle;
+        }
+      }
+      if (r == ROWS - 1) {
+        result.write(rowBoxBottom);
+      } else {
+        result.write(rowSeparator);
+      }
+    }
+    result.write('\n');
+    result.write(operandTop);
+    result.write(rowSeparatorStart[0]);
+    for (var c = 0; c < OPS; c++) {
+      var operand = copiedOperands[c];
+      result.write(operand.value.toString().padLeft(2));
+      if (c == OPS - 1) {
+        result.write(colBoxSeparator);
+        result.write('\n');
+      } else {
+        result.write(colSeparator);
+      }
+    }
+    result.write(operandBottom);
+    result.write('\n');
+    return result.toString();
+  }
+
   void removeLastCells() {
     _cells.removeRange(_cells.length - 2, _cells.length);
     _operands.removeRange(_operands.length - 2, _operands.length);
@@ -212,7 +314,8 @@ class Tetonor {
       var productSolved = false;
       for (var solution in solveIndexes(
           productCellIndexes, sumCellIndexes, operandIndexes, Solution())) {
-        print('$solution\n');
+        // print('$solution\n');
+        print('${solution.toPrettyString()}\n');
         _solutionCount++;
         if (!productSolved) {
           productSolved = true;

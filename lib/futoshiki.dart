@@ -200,7 +200,7 @@ class Cell {
   int getAxis(String axis) {
     if (axis == 'R') return _row;
     if (axis == 'C') return _col;
-    throw Exception('etAxis called with axis $axis');
+    throw Exception('getAxis called with axis $axis');
   }
 }
 
