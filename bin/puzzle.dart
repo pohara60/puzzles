@@ -199,7 +199,7 @@ class FutoshikiCommand extends Command {
       var puzzle = gridString.split(',');
       futoshiki = Futoshiki(puzzle);
       error = futoshiki.error;
-    } else if (numArgs == 9) {
+    } else if (numArgs % 2 == 1) {
       var puzzle = argResults!.rest;
       futoshiki = Futoshiki(puzzle);
       error = futoshiki.error;

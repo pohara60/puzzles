@@ -3,13 +3,13 @@
   "packages": [
     {
       "name": "args",
-      "rootUri": "file:///C:/Users/pohar/AppData/Local/Pub/Cache/hosted/pub.dev/args-2.4.0",
+      "rootUri": "file:///C:/Users/pohar/AppData/Local/Pub/Cache/hosted/pub.dev/args-2.6.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.3"
     },
     {
       "name": "collection",
-      "rootUri": "file:///C:/Users/pohar/AppData/Local/Pub/Cache/hosted/pub.dev/collection-1.17.1",
+      "rootUri": "file:///C:/Users/pohar/AppData/Local/Pub/Cache/hosted/pub.dev/collection-1.18.0",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
@@ -26,7 +26,7 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2023-03-08T10:23:01.558681Z",
+  "generated": "2024-12-30T16:07:14.459569Z",
   "generator": "pub",
-  "generatorVersion": "2.19.2"
+  "generatorVersion": "3.3.0"
 }
